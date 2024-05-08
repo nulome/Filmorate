@@ -50,14 +50,18 @@ public class FilmRepositoryImpl implements FilmStorage {
 
     @Override
     public List<Film> getFilms() {
-        return jdbcTemplate.queryForObject("SELECT f.id, f.name, f.description, f.releasedate, f.duration, " +
-                "l.user_id AS likes, fg.genre_id, g.name AS genre_name, fm.mpa_id, m.name AS mpa_name " +
-                "FROM films f " +
-                "LEFT JOIN film_genres fg ON f.id = fg.film_id " +
-                "LEFT JOIN genre g ON fg.genre_id = g.id " +
-                "LEFT JOIN film_mpa fm ON f.id = fm.film_id " +
-                "LEFT JOIN mpa m ON fm.mpa_id = m.id " +
-                "LEFT JOIN likes l ON f.id = l.film_id ORDER BY f.id", mapperListAllFilms());
+        try {
+            return jdbcTemplate.queryForObject("SELECT f.id, f.name, f.description, f.releasedate, f.duration, " +
+                    "l.user_id AS likes, fg.genre_id, g.name AS genre_name, fm.mpa_id, m.name AS mpa_name " +
+                    "FROM films f " +
+                    "LEFT JOIN film_genres fg ON f.id = fg.film_id " +
+                    "LEFT JOIN genre g ON fg.genre_id = g.id " +
+                    "LEFT JOIN film_mpa fm ON f.id = fm.film_id " +
+                    "LEFT JOIN mpa m ON fm.mpa_id = m.id " +
+                    "LEFT JOIN likes l ON f.id = l.film_id ORDER BY f.id", mapperListAllFilms());
+        } catch (EmptyResultDataAccessException e) {
+            return new ArrayList<>();
+        }
     }
 
     @Override
@@ -82,7 +86,7 @@ public class FilmRepositoryImpl implements FilmStorage {
         return jdbcTemplate.queryForObject("SELECT g.id AS genre_id, g.name AS genre_name FROM genre g ORDER BY g.id",
                 (rs, rowNum) -> {
                     List<Genre> genresList = new ArrayList<>();
-                    if (rs.getInt("id") == 0) {
+                    if (rs.getInt("genre_id") == 0) {
                         return genresList;
                     }
                     do {
@@ -108,7 +112,7 @@ public class FilmRepositoryImpl implements FilmStorage {
         return jdbcTemplate.queryForObject("SELECT m.id AS mpa_id, m.name AS mpa_name FROM mpa m ORDER BY m.id",
                 (rs, rowNum) -> {
                     List<MPA> mpaList = new ArrayList<>();
-                    if (rs.getInt("id") == 0) {
+                    if (rs.getInt("mpa_id") == 0) {
                         return mpaList;
                     }
                     do {
