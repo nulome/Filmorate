@@ -13,6 +13,7 @@ import ru.yandex.practicum.filmorate.related.UnknownValueException;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -72,8 +73,17 @@ public class FilmServiceLogic implements FilmService {
         }
         List<Film> films = dataFilmStorage.getFilms();
         return films.stream()
-                .sorted(this::compare)
+                .sorted(this::comparePopularMovies)
                 .limit(count)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Film> getFilmsSortToDirector(Integer directorId, String sortBy) {
+        log.trace("Получен запрос GET /films/director/{}?sortBy={} ", directorId, sortBy);
+        List<Film> films = dataFilmStorage.getFilmsToDirector(directorId);
+        return films.stream()
+                .sorted(compareSortToDirector(sortBy))
                 .collect(Collectors.toList());
     }
 
@@ -103,8 +113,20 @@ public class FilmServiceLogic implements FilmService {
         return dataFilmStorage.getMpa(id);
     }
 
-    private int compare(Film film1, Film film2) {
+    private int comparePopularMovies(Film film1, Film film2) {
         return film2.getLikes().size() - film1.getLikes().size();
+    }
+
+    private Comparator<Film> compareSortToDirector(String sort) {
+        switch (sort) {
+            case "year":
+                return Comparator.comparingInt(f -> f.getReleaseDate().getYear());
+            case "likes":
+                return Comparator.comparingInt(f -> f.getLikes().size());
+        }
+
+        log.error("Ошибка в способе сортировки: {}", sort);
+        throw new UnknownValueException("Передано не верное значение sortBy: " + sort);
     }
 
     private Film checkAndProvideFilmInDataBase(Integer id) {

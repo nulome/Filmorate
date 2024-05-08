@@ -8,7 +8,6 @@ import ru.yandex.practicum.filmorate.service.FilmService;
 
 import javax.validation.Valid;
 import java.util.List;
-import java.util.Set;
 
 @RestController
 @RequiredArgsConstructor
@@ -16,37 +15,28 @@ import java.util.Set;
 public class DirectorController {
     private final DirectorService directorServiceLogic;
 
-//    GET /directors - Список всех режиссёров
-//
-//    GET /directors/{id}- Получение режиссёра по id
-//
-//    POST /directors - Создание режиссёра
-//
-//    PUT /directors - Изменение режиссёра
-//
-//     DELETE /directors/{id} - Удаление режиссёра
-
     @GetMapping
     public List<Director> getDirectors() {
-        return null;
+        return directorServiceLogic.getDirectors();
     }
 
     @GetMapping("/{id}")
     public Director getDirector(@PathVariable int id) {
-        return null;
+        return directorServiceLogic.getDirector(id);
     }
 
     @PostMapping
     public Director createDirector(@RequestBody @Valid Director director) {
-        return null;
+        return directorServiceLogic.createDirector(director);
     }
 
     @PutMapping
     public Director updateDirector(@RequestBody @Valid Director director) {
-        return null;
+        return directorServiceLogic.updateDirector(director);
     }
 
     @DeleteMapping("/{id}")
     public void deleteDirector(@PathVariable int id) {
+        directorServiceLogic.deleteDirector(id);
     }
 }

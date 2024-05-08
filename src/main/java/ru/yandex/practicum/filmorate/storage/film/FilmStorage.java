@@ -5,6 +5,7 @@ import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.MPA;
 
 import java.util.List;
+import java.util.Set;
 
 public interface FilmStorage {
     Film createFilm(Film film);
@@ -22,4 +23,6 @@ public interface FilmStorage {
     List<MPA> getMpas();
 
     MPA getMpa(Integer id);
+
+    List<Film> getFilmsToDirector(Integer directorId);
 }
