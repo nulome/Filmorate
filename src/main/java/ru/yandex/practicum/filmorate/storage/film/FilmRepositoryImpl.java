@@ -7,6 +7,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.MPA;
@@ -62,12 +63,15 @@ public class FilmRepositoryImpl implements FilmStorage {
     @Override
     public Film getFilm(Integer id) {
         return jdbcTemplate.queryForObject("SELECT f.id, f.name, f.description, f.releasedate, f.duration, " +
-                "l.user_id AS likes, fg.genre_id, g.name AS genre_name, fm.mpa_id, m.name AS mpa_name " +
+                "l.user_id AS likes, fg.genre_id, g.name AS genre_name, fm.mpa_id, m.name AS mpa_name, " +
+                "d.id AS director_id, d.name AS director_name " +
                 "FROM films f " +
                 "LEFT JOIN film_genres fg ON f.id = fg.film_id " +
                 "LEFT JOIN genre g ON fg.genre_id = g.id " +
                 "LEFT JOIN film_mpa fm ON f.id = fm.film_id " +
                 "LEFT JOIN mpa m ON fm.mpa_id = m.id " +
+                "LEFT JOIN film_directors fd ON fd.film_id = f.id " +
+                "LEFT JOIN director d ON d.id = fd.director_id " +
                 "LEFT JOIN likes l ON f.id = l.film_id " +
                 "WHERE f.id = ? " +
                 "ORDER BY f.id", this::mapperFilm, id);
@@ -128,7 +132,8 @@ public class FilmRepositoryImpl implements FilmStorage {
     private Film mapperFilm(ResultSet rs, int rowNum) throws SQLException {
         Film film = createFilmBuilder(rs);
         do {
-            addLikeAndGenreInFilm(rs, film);
+            addLikeAndGenreAndMpaInFilm(rs, film);
+            addDirectorInFilm(rs, film);
         } while (rs.next());
         return film;
     }
@@ -141,12 +146,12 @@ public class FilmRepositoryImpl implements FilmStorage {
             do {
                 if (rs.getInt("id") != check) {
                     film = createFilmBuilder(rs);
-                    addLikeAndGenreInFilm(rs, film);
+                    addLikeAndGenreAndMpaInFilm(rs, film);
 
                     filmsList.add(film);
                     check = rs.getInt("id");
                 } else {
-                    addLikeAndGenreInFilm(rs, film);
+                    addLikeAndGenreAndMpaInFilm(rs, film);
                 }
             } while (rs.next());
             return filmsList;
@@ -162,6 +167,7 @@ public class FilmRepositoryImpl implements FilmStorage {
                 .duration(rs.getInt("duration"))
                 .likes(new HashSet<>())
                 .genres(new TreeSet<>())
+                .director(new TreeSet<>())
                 .build();
     }
 
@@ -176,6 +182,13 @@ public class FilmRepositoryImpl implements FilmStorage {
         return MPA.builder()
                 .id(rs.getInt("mpa_id"))
                 .name(rs.getString("mpa_name"))
+                .build();
+    }
+
+    private Director createDirectorBuilder(ResultSet rs) throws SQLException {
+        return Director.builder()
+                .id(rs.getInt("director_id"))
+                .name(rs.getString("director_name"))
                 .build();
     }
 
@@ -203,7 +216,7 @@ public class FilmRepositoryImpl implements FilmStorage {
         }
     }
 
-    private void addLikeAndGenreInFilm(ResultSet rs, Film film) throws SQLException {
+    private void addLikeAndGenreAndMpaInFilm(ResultSet rs, Film film) throws SQLException {
         if (rs.getInt("likes") != 0) {
             film.getLikes().add(rs.getInt("likes"));
         }
@@ -214,6 +227,12 @@ public class FilmRepositoryImpl implements FilmStorage {
 
         if (film.getMpa() == null && rs.getInt("mpa_id") != 0) {
             film.setMpa(createMpaBuilder(rs));
+        }
+    }
+
+    private void addDirectorInFilm(ResultSet rs, Film film) throws SQLException {
+        if (rs.getInt("director_id") != 0) {
+            film.getDirector().add(createDirectorBuilder(rs));
         }
     }
 }

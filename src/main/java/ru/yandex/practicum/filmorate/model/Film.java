@@ -24,4 +24,5 @@ public class Film {
     @PositiveOrZero
     Integer duration;
     Set<Integer> likes;
+    Set<Director> director;
 }
