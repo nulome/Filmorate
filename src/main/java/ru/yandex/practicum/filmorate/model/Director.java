@@ -8,9 +8,14 @@ import javax.validation.constraints.NotNull;
 
 @Builder
 @Data
-public class Director {
+public class Director implements Comparable<Director> {
     @NotNull
     int id;
     @NotBlank
     String name;
+
+    @Override
+    public int compareTo(Director o) {
+        return this.id - o.id;
+    }
 }
