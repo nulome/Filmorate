@@ -49,6 +49,7 @@ class FilmControllerTest {
                 .duration(80)
                 .likes(new HashSet<>())
                 .genres(new TreeSet<>())
+                .directors(new TreeSet<>())
                 .mpa(mpa)
                 .build();
 
@@ -61,19 +62,19 @@ class FilmControllerTest {
     @Sql({"/data.sql"})
     void checkTestMapping() {
         Film checkFilm = filmController.createFilm(film);
-        assertEquals(7, checkFilm.getId(), "Не записывается id");
+        assertEquals(1, checkFilm.getId(), "Не записывается id");
 
         Film checkFilm2 = filmController.createFilm(film);
-        assertEquals(8, checkFilm2.getId(), "Не обновляется id");
+        assertEquals(2, checkFilm2.getId(), "Не обновляется id");
 
-        film.setId(7);
+        film.setId(1);
         film.setName("UpdName");
         film.setDescription("Update");
         filmController.updateFilm(film);
-        assertEquals(film, filmController.getFilms().get(6), "Не корректно обновляет film");
+        assertEquals(film, filmController.getFilms().get(0), "Не корректно обновляет film");
 
         List<Film> list = filmController.getFilms();
-        assertEquals(8, list.size(), "Не сохраняет фильмы");
+        assertEquals(2, list.size(), "Не сохраняет фильмы");
     }
 
     @Test
