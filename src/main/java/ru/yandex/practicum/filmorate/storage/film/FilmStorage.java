@@ -24,4 +24,6 @@ public interface FilmStorage {
     List<MPA> getMpas();
 
     MPA getMpa(Integer id);
+
+    List<Film> getFilmsToDirector(Integer directorId);
 }
