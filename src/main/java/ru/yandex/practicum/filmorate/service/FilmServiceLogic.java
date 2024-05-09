@@ -39,6 +39,13 @@ public class FilmServiceLogic implements FilmService {
     }
 
     @Override
+    public Film deleteFilm(Integer filmId) {
+        log.info("Получен запрос DELETE /films/{}", filmId);
+        checkAndProvideFilmInDataBase(filmId);
+        return dataFilmStorage.deleteFilm(filmId);
+    }
+
+    @Override
     public List<Film> getFilms() {
         log.trace("Получен запрос Get /films");
         return dataFilmStorage.getFilms();

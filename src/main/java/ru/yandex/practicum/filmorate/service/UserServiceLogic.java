@@ -38,6 +38,13 @@ public class UserServiceLogic implements UserService {
     }
 
     @Override
+    public User deleteUser(Integer userId) {
+        log.info("Получен запрос Delete /users/{}", userId);
+        checkAndReceiptUserInDataBase(userId);
+        return dataUserStorage.deleteUser(userId);
+    }
+
+    @Override
     public List<User> getUsers() {
         log.trace("Получен запрос Get /users");
         return dataUserStorage.getUsers();
