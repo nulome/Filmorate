@@ -48,7 +48,7 @@ public class FilmRepositoryImpl implements FilmStorage {
         updDirectorInDataBase(film);
         return getFilm(film.getId());
     }
-  
+
     @Override
     public Film deleteFilm(Integer filmId) {
         Film film = getFilm(filmId);
