@@ -10,6 +10,8 @@ public interface UserService {
 
     User updateUser(User user);
 
+    User deleteUser(Integer userId);
+
     List<User> getUsers();
 
     Set<Integer> addUserFriend(Integer userId, Integer friendId);
@@ -21,4 +23,6 @@ public interface UserService {
     List<User> getCommonFriend(Integer userId, Integer friendId);
 
     User getUser(Integer id);
+
+
 }

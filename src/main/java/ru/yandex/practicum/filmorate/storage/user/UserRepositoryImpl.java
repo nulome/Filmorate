@@ -44,6 +44,13 @@ public class UserRepositoryImpl implements UserStorage {
     }
 
     @Override
+    public User deleteUser(Integer userId) {
+        User user = getUser(userId);
+        jdbcTemplate.update("DELETE FROM users WHERE id = ?", userId);
+        return user;
+    }
+
+    @Override
     public List<User> getUsers() {
         return jdbcTemplate.queryForObject("SELECT u.id, u.login, u.name, u.email, u.birthday, f.friend_id" +
                 " FROM users u LEFT JOIN friends f ON u.id = f.user_id ORDER BY u.id", mapperListAllUser());

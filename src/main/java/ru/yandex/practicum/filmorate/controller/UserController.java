@@ -25,6 +25,11 @@ public class UserController {
         return userServiceLogic.updateUser(user);
     }
 
+    @DeleteMapping("/{userId}")
+    public User deleteUser(@PathVariable int userId) {
+        return userServiceLogic.deleteUser(userId);
+    }
+
     @GetMapping
     public List<User> getUsers() {
         return userServiceLogic.getUsers();
@@ -54,4 +59,6 @@ public class UserController {
     public List<User> getCommonFriend(@PathVariable int userId, @PathVariable int otherId) {
         return userServiceLogic.getCommonFriend(userId, otherId);
     }
+
+
 }
