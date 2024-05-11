@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.storage.user;
 
 import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.List;
@@ -20,4 +21,6 @@ public interface UserStorage {
     User getUser(Integer id);
 
     Map<Integer, Set<Integer>> getUsersLikes();
+
+    List<Event> getUserFeed(int userId);
 }
