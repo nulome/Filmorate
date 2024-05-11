@@ -50,6 +50,13 @@ public class FilmRepositoryImpl implements FilmStorage {
     }
 
     @Override
+    public Film deleteFilm(Integer filmId) {
+        Film film = getFilm(filmId);
+        jdbcTemplate.update("DELETE FROM films WHERE id = ?", filmId);
+        return film;
+    }
+
+    @Override
     public List<Film> getFilms() {
         try {
             return jdbcTemplate.queryForObject("SELECT f.id, f.name, f.description, f.releasedate, f.duration, " +

@@ -11,6 +11,8 @@ public interface UserService {
 
     User updateUser(User user);
 
+    User deleteUser(Integer userId);
+
     List<User> getUsers();
 
     Set<Integer> addUserFriend(Integer userId, Integer friendId);
