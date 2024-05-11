@@ -61,9 +61,8 @@ public class FilmController {
         return filmServiceLogic.getFilmsSortToDirector(directorId, sortBy);
     }
 
-    //GET /films/search?query=крад&by=director,title
-    @GetMapping
-    public List<Film> getFilmsBySearch(@RequestParam String query, @RequestParam String bySearch) {
-        return filmServiceLogic.getFilmsBySearch(query, bySearch);
+    @GetMapping("/search")
+    public List<Film> getFilmsBySearch(@RequestParam String query, @RequestParam String by) {
+        return filmServiceLogic.getFilmsBySearch(query, by);
     }
 }

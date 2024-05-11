@@ -122,24 +122,15 @@ public class FilmServiceLogic implements FilmService {
 
     @Override
     public List<Film> getFilmsBySearch(String query, String bySearch) {
-        return dataFilmStorage.getFilmsBySearch(query, checkBySearch(bySearch));
+        log.debug("Получен запрос GET /films/search?query={}&by={}", query, bySearch);
+        List<Film> films =  dataFilmStorage.getFilmsBySearch(query, bySearch);
+        return films.stream()
+                .sorted(this::comparePopularMovies)
+                .collect(Collectors.toList());
     }
 
     private int comparePopularMovies(Film film1, Film film2) {
         return film2.getLikes().size() - film1.getLikes().size();
-    }
-
-    private List<String> checkBySearch(String bySearch) {
-        String[] search = bySearch.split(",");
-        switch ("ff") {
-            case "year":
-                return null;
-            case "likes":
-                return null;
-        }
-
-        log.error("Ошибка в способе сортировки: {}", bySearch);
-        throw new UnknownValueException("Передано не верное значение sortBy: " + bySearch);
     }
 
     private Comparator<Film> compareSortToDirector(String sort) {

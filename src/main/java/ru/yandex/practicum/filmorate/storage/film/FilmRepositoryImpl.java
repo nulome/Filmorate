@@ -161,8 +161,61 @@ public class FilmRepositoryImpl implements FilmStorage {
     }
 
     @Override
-    public List<Film> getFilmsBySearch(String query, List<String> bySearch) {
-        return null;
+    public List<Film> getFilmsBySearch(String query, String bySearch) {
+        try {
+            return jdbcTemplate.queryForObject(sqlSearchCreate(bySearch, query), mapperListAllFilms());
+        } catch (EmptyResultDataAccessException e) {
+            return new ArrayList<>();
+        }
+    }
+
+    private String getQueryParam(String query) {
+        String str = "'%" + query + "%' ";
+        return str;
+    }
+
+    private String sqlSearchCreate(String bySearch, String query) {
+        List<String> listSearch = checkBySearch(bySearch);
+        StringBuilder sb = new StringBuilder();
+        sb.append("SELECT f.id, f.name, f.description, f.releasedate, f.duration, " +
+                "l.user_id AS likes, fg.genre_id, g.name AS genre_name, fm.mpa_id, m.name AS mpa_name, " +
+                "d.id AS director_id, d.name AS director_name " +
+                "FROM films f " +
+                "LEFT JOIN film_genres fg ON f.id = fg.film_id " +
+                "LEFT JOIN genre g ON fg.genre_id = g.id " +
+                "LEFT JOIN film_mpa fm ON f.id = fm.film_id " +
+                "LEFT JOIN mpa m ON fm.mpa_id = m.id " +
+                "LEFT JOIN film_directors fd ON fd.film_id = f.id " +
+                "LEFT JOIN director d ON d.id = fd.director_id " +
+                "LEFT JOIN likes l ON f.id = l.film_id WHERE ");
+        for (int i = 0; i < listSearch.size(); i++) {
+            if (i > 0) {
+                sb.append("OR ");
+            }
+            sb.append(listSearch.get(i));
+            sb.append(getQueryParam(query));
+        }
+        String sql = sb.toString();
+        return sql;
+    }
+
+    private List<String> checkBySearch(String bySearch) {
+        String[] search = bySearch.split(",");
+        List<String> listSearch = new ArrayList<>();
+        for (String str : search) {
+            switch (str) {
+                case "director":
+                    listSearch.add("d.name ILIKE ");
+                    break;
+                case "title":
+                    listSearch.add("f.name ILIKE ");
+                    break;
+                default:
+                    log.error("Ошибка в поиске: {}", bySearch);
+                    throw new UnknownValueException("Передано не верное значение bySearch: " + bySearch);
+            }
+        }
+        return listSearch;
     }
 
     private Film mapperFilm(ResultSet rs, int rowNum) throws SQLException {

@@ -27,5 +27,5 @@ public interface FilmStorage {
 
     List<Film> getFilmsToDirector(Integer directorId);
 
-    List<Film> getFilmsBySearch(String query, List<String> bySearch);
+    List<Film> getFilmsBySearch(String query, String bySearch);
 }
