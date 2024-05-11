@@ -163,19 +163,23 @@ public class FilmRepositoryImpl implements FilmStorage {
     @Override
     public List<Film> getFilmsBySearch(String query, String bySearch) {
         try {
-            return jdbcTemplate.queryForObject(sqlSearchCreate(bySearch, query), mapperListAllFilms());
+            List<String> listSearch = checkBySearch(bySearch);
+            if (listSearch.size() == 2) {
+                return jdbcTemplate.queryForObject(sqlSearchCreate(listSearch), mapperListAllFilms(),
+                        getQueryParam(query), getQueryParam(query));
+            } else {
+                return jdbcTemplate.queryForObject(sqlSearchCreate(listSearch), mapperListAllFilms(), getQueryParam(query));
+            }
         } catch (EmptyResultDataAccessException e) {
             return new ArrayList<>();
         }
     }
 
     private String getQueryParam(String query) {
-        String str = "'%" + query + "%' ";
-        return str;
+        return "%" + query + "%";
     }
 
-    private String sqlSearchCreate(String bySearch, String query) {
-        List<String> listSearch = checkBySearch(bySearch);
+    private String sqlSearchCreate(List<String> listSearch) {
         StringBuilder sb = new StringBuilder();
         sb.append("SELECT f.id, f.name, f.description, f.releasedate, f.duration, " +
                 "l.user_id AS likes, fg.genre_id, g.name AS genre_name, fm.mpa_id, m.name AS mpa_name, " +
@@ -193,10 +197,8 @@ public class FilmRepositoryImpl implements FilmStorage {
                 sb.append("OR ");
             }
             sb.append(listSearch.get(i));
-            sb.append(getQueryParam(query));
         }
-        String sql = sb.toString();
-        return sql;
+        return sb.toString();
     }
 
     private List<String> checkBySearch(String bySearch) {
@@ -205,10 +207,10 @@ public class FilmRepositoryImpl implements FilmStorage {
         for (String str : search) {
             switch (str) {
                 case "director":
-                    listSearch.add("d.name ILIKE ");
+                    listSearch.add("d.name ILIKE ? ");
                     break;
                 case "title":
-                    listSearch.add("f.name ILIKE ");
+                    listSearch.add("f.name ILIKE ? ");
                     break;
                 default:
                     log.error("Ошибка в поиске: {}", bySearch);
