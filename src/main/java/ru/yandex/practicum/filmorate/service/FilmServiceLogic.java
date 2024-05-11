@@ -13,9 +13,7 @@ import ru.yandex.practicum.filmorate.related.UnknownValueException;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -118,6 +116,27 @@ public class FilmServiceLogic implements FilmService {
     @Override
     public MPA getMpa(Integer id) {
         return dataFilmStorage.getMpa(id);
+    }
+
+    @Override
+    public List<Film> getCommonFilms(Integer userId, Integer friendId) {
+        log.trace("Получен запрос GET /films/common/{}&{}", userId, friendId);
+        User user = dataUserStorage.getUser(userId);
+        User friend = dataUserStorage.getUser(friendId);
+        if (!user.getFriendsList().contains(friend.getId())) {
+            throw new UnknownValueException("Пользователи не являются друзьями");
+        }
+        Map<Integer, Set<Integer>> likesByUser = dataUserStorage.getUsersLikes();
+        if (!likesByUser.containsKey(user.getId()) || !likesByUser.containsKey(friend.getId())) {
+            return new ArrayList<>();
+        }
+        Set<Integer> commonFilmsIds = new HashSet<>(likesByUser.get(user.getId()));
+        commonFilmsIds.retainAll(likesByUser.get(friend.getId()));
+
+        return dataFilmStorage.getFilms()
+                .stream()
+                .filter(o -> commonFilmsIds.contains(o.getId()))
+                .collect(Collectors.toList());
     }
 
     private int comparePopularMovies(Film film1, Film film2) {

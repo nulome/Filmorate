@@ -33,4 +33,6 @@ public interface FilmService {
     List<MPA> getMpas();
 
     MPA getMpa(Integer id);
+
+    List<Film> getCommonFilms(Integer userId, Integer friendId);
 }
