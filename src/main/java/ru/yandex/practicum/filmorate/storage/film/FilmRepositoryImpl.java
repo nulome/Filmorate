@@ -160,6 +160,11 @@ public class FilmRepositoryImpl implements FilmStorage {
                 "WHERE director_id = ? ORDER BY f.id", mapperListAllFilms(), directorId);
     }
 
+    @Override
+    public List<Film> getFilmsBySearch(String query, List<String> bySearch) {
+        return null;
+    }
+
     private Film mapperFilm(ResultSet rs, int rowNum) throws SQLException {
         Film film = createFilmBuilder(rs);
         do {

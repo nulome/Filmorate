@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.service;
 
+import org.springframework.web.bind.annotation.RequestParam;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.MPA;
@@ -33,4 +34,6 @@ public interface FilmService {
     List<MPA> getMpas();
 
     MPA getMpa(Integer id);
+
+    List<Film> getFilmsBySearch(String query, String bySearch);
 }
