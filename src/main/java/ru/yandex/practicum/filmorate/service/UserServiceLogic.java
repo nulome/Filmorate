@@ -4,16 +4,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.related.UnknownValueException;
 import ru.yandex.practicum.filmorate.related.ValidationException;
+import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -21,6 +21,8 @@ import java.util.Set;
 public class UserServiceLogic implements UserService {
 
     private final UserStorage dataUserStorage;
+
+    private final FilmStorage dataFilmStorage;
 
     @Override
     public User createUser(User user) {
@@ -100,6 +102,39 @@ public class UserServiceLogic implements UserService {
         return checkAndReceiptUserInDataBase(id);
     }
 
+    @Override
+    public List<Film> getRecommendations(Integer userId) {
+        log.trace("Получен запрос GET /users/{}/recommendations", userId);
+        Map<Integer, Set<Integer>> likesByUser = dataUserStorage.getUsersLikes();
+        checkAndReceiptUserInDataBase(userId);
+        if (!likesByUser.containsKey(userId)) {
+            return new ArrayList<>();
+        }
+        Map<Integer, Integer> likedFilmIntersections = getLikedFilmIntersections(likesByUser, userId);
+        if (likedFilmIntersections.isEmpty()) {
+            return new ArrayList<>();
+        }
+        int maxIntersectionUser = Collections.max(likedFilmIntersections.entrySet(), Map.Entry.comparingByValue()).getKey();
+
+        Set<Integer> maxUserIds = likedFilmIntersections.entrySet()
+                .stream()
+                .filter(entry -> Objects.equals(entry.getValue(), likedFilmIntersections.get(maxIntersectionUser)))
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toSet());
+
+        Set<Integer> recommendationsIds = maxUserIds.stream()
+                .map(likesByUser::get)
+                .flatMap(Set::stream)
+                .collect(Collectors.toSet());
+
+        recommendationsIds.removeAll(likesByUser.get(userId));
+
+        return dataFilmStorage.getFilms()
+                .stream()
+                .filter(o -> recommendationsIds.contains(o.getId()))
+                .collect(Collectors.toList());
+    }
+
     private void validation(User user) {
         checkNameNotEmpty(user);
         checkListFriendsNotNull(user);
@@ -129,5 +164,19 @@ public class UserServiceLogic implements UserService {
             log.error("Ошибка в запросе к базе данных. Не найдено значение по id: {} \n {}", id, e.getMessage());
             throw new UnknownValueException("Передан не верный id: " + id);
         }
+    }
+
+    private Map<Integer, Integer> getLikedFilmIntersections(Map<Integer, Set<Integer>> likes, Integer keyUser) {
+        Map<Integer, Integer> intersections = new HashMap<>();
+        for (Integer userId : likes.keySet()) {
+            if (!userId.equals(keyUser)) {
+                Set<Integer> intersection = new HashSet<>(likes.get(keyUser));
+                intersection.retainAll(likes.get(userId));
+                if (intersection.size() > 0) {
+                    intersections.put(userId, intersection.size());
+                }
+            }
+        }
+        return intersections;
     }
 }
