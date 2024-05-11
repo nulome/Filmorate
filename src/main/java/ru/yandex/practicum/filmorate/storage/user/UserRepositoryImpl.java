@@ -9,10 +9,7 @@ import ru.yandex.practicum.filmorate.model.User;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Repository
 @RequiredArgsConstructor
@@ -69,6 +66,24 @@ public class UserRepositoryImpl implements UserStorage {
             return user;
         }, id);
     }
+
+    public Map<Integer, Set<Integer>> getUsersLikes() {
+        return jdbcTemplate.query("SELECT l.user_id, l.film_id FROM likes l ORDER BY l.user_id", this::mapperListAllLikes);
+    }
+
+    private Map<Integer, Set<Integer>> mapperListAllLikes(ResultSet rs) throws SQLException {
+        Map<Integer, Set<Integer>> likes = new HashMap<>();
+        while (rs.next()) {
+            Integer userId = rs.getInt("user_id");
+            Integer filmId = rs.getInt("film_id");
+            if (!likes.containsKey(userId)) {
+                likes.put(userId, new HashSet<>());
+            }
+            likes.get(userId).add(filmId);
+        }
+        return likes;
+    }
+
 
     private RowMapper<List<User>> mapperListAllUser() {
         return (rs, rowNum) -> {
