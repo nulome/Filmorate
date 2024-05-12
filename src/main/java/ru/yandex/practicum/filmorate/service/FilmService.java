@@ -20,7 +20,7 @@ public interface FilmService {
 
     Set<Integer> deleteLikes(Integer filmId, Integer userId);
 
-    List<Film> getPopularMovies(Integer count);
+    List<Film> getPopularMovies(Integer count, Integer genreId, Integer year);
 
     List<Film> getFilmsSortToDirector(Integer directorId, String sortBy);
 

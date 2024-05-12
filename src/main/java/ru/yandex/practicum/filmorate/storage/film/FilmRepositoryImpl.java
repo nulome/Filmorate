@@ -92,7 +92,7 @@ public class FilmRepositoryImpl implements FilmStorage {
                 "ORDER BY f.id", this::mapperFilm, id);
     }
 
-    @Override
+  @Override
     public List<Genre> getGenres() {
         return jdbcTemplate.queryForObject("SELECT g.id AS genre_id, g.name AS genre_name FROM genre g ORDER BY g.id",
                 (rs, rowNum) -> {
