@@ -125,6 +125,17 @@ public class FilmServiceLogic implements FilmService {
     }
 
     @Override
+    public List<Film> getCommonFilms(Integer userId, Integer friendId) {
+        log.trace("Получен запрос GET /films/common/{}&{}", userId, friendId);
+        checkAndReceiptUserInDataBase(userId);
+        checkAndReceiptUserInDataBase(friendId);
+        List<Film> films = dataFilmStorage.getCommonFilms(userId, friendId);
+        return films.stream()
+                .sorted(this::comparePopularMovies)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<Film> getFilmsBySearch(String query, String bySearch) {
         log.debug("Получен запрос GET /films/search?query={}&by={}", query, bySearch);
         List<Film> films =  dataFilmStorage.getFilmsBySearch(query, bySearch);

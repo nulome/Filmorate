@@ -161,6 +161,29 @@ public class FilmRepositoryImpl implements FilmStorage {
     }
 
     @Override
+    public List<Film> getCommonFilms(Integer userId, Integer friendId) {
+        try {
+            return jdbcTemplate.queryForObject("SELECT f.id, f.name, f.description, f.releasedate, f.duration, " +
+                    "l.user_id AS likes, fg.genre_id, g.name AS genre_name, fm.mpa_id, m.name AS mpa_name, " +
+                    "d.id AS director_id, d.name AS director_name " +
+                    "FROM films f " +
+                    "LEFT JOIN film_genres fg ON f.id = fg.film_id " +
+                    "LEFT JOIN genre g ON fg.genre_id = g.id " +
+                    "LEFT JOIN film_mpa fm ON f.id = fm.film_id " +
+                    "LEFT JOIN mpa m ON fm.mpa_id = m.id " +
+                    "LEFT JOIN film_directors fd ON fd.film_id = f.id " +
+                    "LEFT JOIN director d ON d.id = fd.director_id " +
+                    "LEFT JOIN likes l ON f.id = l.film_id " +
+                    "WHERE f.id IN (SELECT f2.id " +
+                    "FROM FILMS f2 " +
+                    "INNER JOIN LIKES l ON f.ID = l.FILM_ID AND l.USER_ID = ? " +
+                    "INNER JOIN LIKES l2 ON f.ID = l2.FILM_ID AND l2.USER_ID = ?)", mapperListAllFilms(), userId, friendId);
+        } catch (EmptyResultDataAccessException e) {
+            return new ArrayList<>();
+        }
+    }
+
+    @Override
     public List<Film> getFilmsBySearch(String query, String bySearch) {
         try {
             List<String> listSearch = checkBySearch(bySearch);

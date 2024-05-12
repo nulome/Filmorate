@@ -34,5 +34,7 @@ public interface FilmService {
 
     MPA getMpa(Integer id);
 
+    List<Film> getCommonFilms(Integer userId, Integer friendId);
+
     List<Film> getFilmsBySearch(String query, String bySearch);
 }
