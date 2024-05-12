@@ -124,6 +124,15 @@ public class FilmServiceLogic implements FilmService {
         return dataFilmStorage.getMpa(id);
     }
 
+    @Override
+    public List<Film> getFilmsBySearch(String query, String bySearch) {
+        log.debug("Получен запрос GET /films/search?query={}&by={}", query, bySearch);
+        List<Film> films =  dataFilmStorage.getFilmsBySearch(query, bySearch);
+        return films.stream()
+                .sorted(this::comparePopularMovies)
+                .collect(Collectors.toList());
+    }
+
     private int comparePopularMovies(Film film1, Film film2) {
         return film2.getLikes().size() - film1.getLikes().size();
     }
