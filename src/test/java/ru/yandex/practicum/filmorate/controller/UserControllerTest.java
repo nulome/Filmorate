@@ -9,6 +9,7 @@ import org.springframework.test.context.jdbc.Sql;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.related.ValidationException;
 import ru.yandex.practicum.filmorate.service.UserServiceLogic;
+import ru.yandex.practicum.filmorate.storage.event.EventRepositoryImpl;
 import ru.yandex.practicum.filmorate.storage.film.FilmRepositoryImpl;
 import ru.yandex.practicum.filmorate.storage.user.UserRepositoryImpl;
 
@@ -34,7 +35,7 @@ class UserControllerTest {
 
     @BeforeEach
     void create() {
-        userController = new UserController(new UserServiceLogic(new UserRepositoryImpl(jdbcTemplate), new FilmRepositoryImpl(jdbcTemplate)));
+        userController = new UserController(new UserServiceLogic(new UserRepositoryImpl(jdbcTemplate), new FilmRepositoryImpl(jdbcTemplate), new EventRepositoryImpl(jdbcTemplate)));
 
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         validator = factory.getValidator();

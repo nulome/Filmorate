@@ -4,10 +4,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.related.UnknownValueException;
 import ru.yandex.practicum.filmorate.related.ValidationException;
+import ru.yandex.practicum.filmorate.storage.event.EventStorage;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
@@ -23,6 +25,8 @@ public class UserServiceLogic implements UserService {
     private final UserStorage dataUserStorage;
 
     private final FilmStorage dataFilmStorage;
+
+    private final EventStorage eventStorage;
 
     @Override
     public User createUser(User user) {
@@ -59,6 +63,7 @@ public class UserServiceLogic implements UserService {
         checkAndReceiptUserInDataBase(friendId);
         user.getFriendsList().add(friendId);
         dataUserStorage.updateUser(user);
+        eventStorage.addUserFriendHandler(userId, friendId, System.currentTimeMillis());
         return user.getFriendsList();
     }
 
@@ -69,6 +74,7 @@ public class UserServiceLogic implements UserService {
         checkAndReceiptUserInDataBase(friendId);
         user.getFriendsList().remove(friendId);
         dataUserStorage.updateUser(user);
+        eventStorage.deleteUserFriendHandler(userId, friendId, System.currentTimeMillis());
         return user.getFriendsList();
     }
 
@@ -133,6 +139,13 @@ public class UserServiceLogic implements UserService {
                 .stream()
                 .filter(o -> recommendationsIds.contains(o.getId()))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Event> getUserFeed(int userId) {
+        checkAndReceiptUserInDataBase(userId);
+        log.trace("Получен запрос GET /users/{}/feed", userId);
+        return dataUserStorage.getUserFeed(userId);
     }
 
     private void validation(User user) {
