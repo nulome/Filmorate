@@ -77,13 +77,32 @@ public class FilmServiceLogic implements FilmService {
     }
 
     @Override
-    public List<Film> getPopularMovies(Integer count) {
-        log.trace("Получен запрос GET /films/popular?count={} - топ по лайкам", count);
+    public List<Film> getPopularMovies(Integer count, Integer genreId, Integer year) {
+        log.trace("Получен запрос GET /films/popular?count={}&genreId={}&year={} - топ по лайкам", count, genreId, year);
         if (count == null) {
             count = Constants.DEFAULT_POPULAR_VALUE;
         }
+
         List<Film> films = dataFilmStorage.getFilms();
         return films.stream()
+                .filter(film -> {
+
+                    if (genreId == null)
+                        return true;
+
+                    for (Genre genre : film.getGenres()) {
+                        if (genre.getId() == genreId)
+                            return true;
+                    }
+
+                    return false;
+                })
+                .filter(film -> {
+                    if (year == null)
+                        return true;
+                    else
+                        return film.getReleaseDate().getYear() == year;
+                })
                 .sorted(this::comparePopularMovies)
                 .limit(count)
                 .collect(Collectors.toList());
