@@ -10,6 +10,7 @@ import ru.yandex.practicum.filmorate.model.MPA;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.related.Constants;
 import ru.yandex.practicum.filmorate.related.UnknownValueException;
+import ru.yandex.practicum.filmorate.storage.event.EventStorage;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
@@ -25,6 +26,7 @@ public class FilmServiceLogic implements FilmService {
 
     private final FilmStorage dataFilmStorage;
     private final UserStorage dataUserStorage;
+    private final EventStorage eventStorage;
 
     @Override
     public Film createFilm(Film film) {
@@ -59,6 +61,7 @@ public class FilmServiceLogic implements FilmService {
         Film film = checkAndProvideFilmInDataBase(filmId);
         film.getLikes().add(userId);
         dataFilmStorage.updateFilm(film);
+        eventStorage.addLikesHandler(filmId, userId, System.currentTimeMillis());
         return film.getLikes();
     }
 
@@ -69,6 +72,7 @@ public class FilmServiceLogic implements FilmService {
         Film film = checkAndProvideFilmInDataBase(filmId);
         film.getLikes().remove(userId);
         dataFilmStorage.updateFilm(film);
+        eventStorage.deleteLikesHandler(filmId, userId, System.currentTimeMillis());
         return film.getLikes();
     }
 

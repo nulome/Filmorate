@@ -9,6 +9,7 @@ import org.springframework.test.context.jdbc.Sql;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.MPA;
 import ru.yandex.practicum.filmorate.service.FilmServiceLogic;
+import ru.yandex.practicum.filmorate.storage.event.EventRepositoryImpl;
 import ru.yandex.practicum.filmorate.storage.film.FilmRepositoryImpl;
 import ru.yandex.practicum.filmorate.storage.user.UserRepositoryImpl;
 
@@ -37,7 +38,7 @@ class FilmControllerTest {
     @BeforeEach
     void create() {
         filmController = new FilmController(new FilmServiceLogic(new FilmRepositoryImpl(jdbcTemplate),
-               new UserRepositoryImpl(jdbcTemplate)));
+               new UserRepositoryImpl(jdbcTemplate), new EventRepositoryImpl(jdbcTemplate)));
         MPA mpa = MPA.builder()
                 .id(1)
                 .name("G")

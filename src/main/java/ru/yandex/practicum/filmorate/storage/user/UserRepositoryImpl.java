@@ -5,7 +5,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.related.EventType;
+import ru.yandex.practicum.filmorate.related.Operation;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -69,6 +72,19 @@ public class UserRepositoryImpl implements UserStorage {
 
     public Map<Integer, Set<Integer>> getUsersLikes() {
         return jdbcTemplate.query("SELECT l.user_id, l.film_id FROM likes l ORDER BY l.user_id", this::mapperListAllLikes);
+    }
+
+    @Override
+    public List<Event> getUserFeed(int userId) {
+        return jdbcTemplate.query("SELECT id, user_id, entity_id, event_type, operation, event_date " +
+                                  "FROM events WHERE user_id = ?", (rs, rowNum) -> Event.builder()
+                .id(rs.getInt(1))
+                .userId(rs.getInt(2))
+                .entityId(rs.getInt(3))
+                .eventType(EventType.valueOf(rs.getString(4)))
+                .operation(Operation.valueOf(rs.getString(5)))
+                .eventDate(rs.getDate(6).getTime())
+                .build(), userId);
     }
 
     private Map<Integer, Set<Integer>> mapperListAllLikes(ResultSet rs) throws SQLException {
