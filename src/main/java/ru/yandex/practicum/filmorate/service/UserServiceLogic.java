@@ -185,7 +185,7 @@ public class UserServiceLogic implements UserService {
             if (!userId.equals(keyUser)) {
                 Set<Integer> intersection = new HashSet<>(likes.get(keyUser));
                 intersection.retainAll(likes.get(userId));
-                if (intersection.size() > 0) {
+                if (!intersection.isEmpty()) {
                     intersections.put(userId, intersection.size());
                 }
             }
