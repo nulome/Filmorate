@@ -63,7 +63,7 @@ public class UserServiceLogic implements UserService {
         checkAndReceiptUserInDataBase(friendId);
         user.getFriendsList().add(friendId);
         dataUserStorage.updateUser(user);
-        eventStorage.addUserFriendHandler(userId, friendId, System.currentTimeMillis());
+        eventStorage.addUserFriendEvent(userId, friendId, System.currentTimeMillis());
         return user.getFriendsList();
     }
 
@@ -74,7 +74,7 @@ public class UserServiceLogic implements UserService {
         checkAndReceiptUserInDataBase(friendId);
         user.getFriendsList().remove(friendId);
         dataUserStorage.updateUser(user);
-        eventStorage.deleteUserFriendHandler(userId, friendId, System.currentTimeMillis());
+        eventStorage.deleteUserFriendEvent(userId, friendId, System.currentTimeMillis());
         return user.getFriendsList();
     }
 

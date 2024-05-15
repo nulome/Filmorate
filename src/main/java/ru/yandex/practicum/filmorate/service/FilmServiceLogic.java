@@ -61,7 +61,7 @@ public class FilmServiceLogic implements FilmService {
         Film film = checkAndProvideFilmInDataBase(filmId);
         film.getLikes().add(userId);
         dataFilmStorage.updateFilm(film);
-        eventStorage.addLikesHandler(filmId, userId, System.currentTimeMillis());
+        eventStorage.addLikesEvent(filmId, userId, System.currentTimeMillis());
         return film.getLikes();
     }
 
@@ -72,7 +72,7 @@ public class FilmServiceLogic implements FilmService {
         Film film = checkAndProvideFilmInDataBase(filmId);
         film.getLikes().remove(userId);
         dataFilmStorage.updateFilm(film);
-        eventStorage.deleteLikesHandler(filmId, userId, System.currentTimeMillis());
+        eventStorage.deleteLikesEvent(filmId, userId, System.currentTimeMillis());
         return film.getLikes();
     }
 
