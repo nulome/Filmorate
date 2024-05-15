@@ -27,14 +27,14 @@ public class ReviewServiceLogic implements ReviewService {
         userStorage.getUser(review.getUserId());
         filmStorage.getFilm(review.getFilmId());
         Review rev = reviewStorage.createReview(review);
-        eventStorage.createReviewHandler(rev.getId(), review.getUserId(), System.currentTimeMillis());
+        eventStorage.createReviewEvent(rev.getId(), review.getUserId(), System.currentTimeMillis());
         return rev;
     }
 
     @Override
     public Review updateReview(Review review) {
         log.info("Получен запрос Put /reviews/{}", review.getId());
-        eventStorage.updateReviewHandler(review.getId(),
+        eventStorage.updateReviewEvent(review.getId(),
                 reviewStorage.getReview(review.getId()).getUserId(), System.currentTimeMillis());
         return reviewStorage.updateReview(review);
     }
@@ -42,7 +42,7 @@ public class ReviewServiceLogic implements ReviewService {
     @Override
     public boolean deleteReview(int reviewId) {
         log.debug("Получен запрос DELETE /reviews/{}", reviewId);
-        eventStorage.deleteReviewHandler(getReview(reviewId).getUserId(), reviewId, System.currentTimeMillis());
+        eventStorage.deleteReviewEvent(getReview(reviewId).getUserId(), reviewId, System.currentTimeMillis());
         return reviewStorage.deleteReview(reviewId);
     }
 
@@ -57,7 +57,8 @@ public class ReviewServiceLogic implements ReviewService {
         log.info("Получен запрос GET /reviews с параметрами filmid = {} , count = {}", filmId, count);
         if (filmId == 0) {
             return reviewStorage.getAllReviews(count);
-        } else return reviewStorage.getAllReviewsByFilmId(filmId, count);
+        }
+        return reviewStorage.getAllReviewsByFilmId(filmId, count);
     }
 
     @Override
