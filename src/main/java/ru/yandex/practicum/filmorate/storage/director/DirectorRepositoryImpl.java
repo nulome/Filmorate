@@ -19,16 +19,25 @@ public class DirectorRepositoryImpl implements DirectorStorage {
 
     private final JdbcTemplate jdbcTemplate;
 
+    private static final String SELECT_ALL_DIRECTORS_SQL = "SELECT d.id AS director_id, d.name AS director_name" +
+            " FROM director d ORDER BY director_id";
+
+    private static final String SELECT_DIRECTOR_BY_ID_SQL = "SELECT d.id AS director_id, d.name AS director_name" +
+            " FROM director d WHERE id = ?";
+
+    private static final String UPDATE_DIRECTOR_SQL = "UPDATE director SET name = ?" +
+            " WHERE id = ?";
+
+    private static final String DELETE_DIRECTOR_SQL = "DELETE FROM director WHERE id = ?";
+
     @Override
     public List<Director> getDirectors() {
-        return jdbcTemplate.queryForObject("SELECT d.id AS director_id, d.name AS director_name" +
-                        " FROM director d ORDER BY director_id", mapperListAllDirectors());
+        return jdbcTemplate.queryForObject(SELECT_ALL_DIRECTORS_SQL, mapperListAllDirectors());
     }
 
     @Override
     public Director getDirector(Integer id) {
-        return jdbcTemplate.queryForObject("SELECT d.id AS director_id, d.name AS director_name" +
-                        " FROM director d WHERE id = ?", (rs, rowNum) -> DirectorStorage.createDirectorBuilder(rs), id);
+        return jdbcTemplate.queryForObject(SELECT_DIRECTOR_BY_ID_SQL, (rs, rowNum) -> DirectorStorage.createDirectorBuilder(rs), id);
     }
 
     @Override
@@ -44,14 +53,13 @@ public class DirectorRepositoryImpl implements DirectorStorage {
 
     @Override
     public Director updateDirector(Director director) {
-        jdbcTemplate.update("UPDATE director SET name = ?" +
-                " WHERE id = ?", director.getName(), director.getId());
+        jdbcTemplate.update(UPDATE_DIRECTOR_SQL, director.getName(), director.getId());
         return getDirector(director.getId());
     }
 
     @Override
     public void deleteDirector(Integer id) {
-        jdbcTemplate.update("DELETE FROM director WHERE id = ?", id);
+        jdbcTemplate.update(DELETE_DIRECTOR_SQL, id);
     }
 
     private RowMapper<List<Director>> mapperListAllDirectors() {

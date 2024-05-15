@@ -25,6 +25,46 @@ public class FilmRepositoryImpl implements FilmStorage {
 
     private final JdbcTemplate jdbcTemplate;
 
+    private static final String SELECT_FILM_BASE_SQL = "SELECT f.id, f.name, f.description, f.releasedate, f.duration, " +
+            "l.user_id AS likes, fg.genre_id, g.name AS genre_name, fm.mpa_id, m.name AS mpa_name, " +
+            "d.id AS director_id, d.name AS director_name " +
+            "FROM films f " +
+            "LEFT JOIN film_genres fg ON f.id = fg.film_id " +
+            "LEFT JOIN genre g ON fg.genre_id = g.id " +
+            "LEFT JOIN film_mpa fm ON f.id = fm.film_id " +
+            "LEFT JOIN mpa m ON fm.mpa_id = m.id " +
+            "LEFT JOIN film_directors fd ON fd.film_id = f.id " +
+            "LEFT JOIN director d ON d.id = fd.director_id " +
+            "LEFT JOIN likes l ON f.id = l.film_id ";
+
+    private static final String UPDATE_FILM_SQL = "UPDATE films SET name = ?, description  = ?, releasedate  = ?, " +
+            "duration = ? WHERE id = ?";
+
+    private static final String DELETE_FILM_SQL = "DELETE FROM films WHERE id = ?";
+    private static final String SELECT_ALL_FILMS_SQL = SELECT_FILM_BASE_SQL + "ORDER BY f.id";
+
+
+    private static final String SELECT_FILM_BY_ID_SQL = SELECT_FILM_BASE_SQL + "WHERE f.id = ? ORDER BY f.id";
+
+    private static final String SELECT_ALL_GENRES_SQL = "SELECT g.id AS genre_id, g.name AS genre_name FROM genre g " +
+            "ORDER BY g.id";
+
+    private static final String SELECT_GENRE_BY_ID_SQL = "SELECT g.id AS genre_id, g.name AS genre_name FROM genre g " +
+            "WHERE id = ?";
+
+    private static final String SELECT_ALL_MPAS_SQL = "SELECT m.id AS mpa_id, m.name AS mpa_name FROM mpa m " +
+            "ORDER BY m.id";
+
+    private static final String SELECT_MPA_BY_ID_SQL = "SELECT m.id AS mpa_id, m.name AS mpa_name FROM mpa m WHERE id = ?";
+
+    private static final String SELECT_FILMS_TO_DIRECTOR_SQL = SELECT_FILM_BASE_SQL + "WHERE director_id = ? ORDER BY f.id";
+
+    private static final String SELECT_COMMON_FILMS_SQL = SELECT_FILM_BASE_SQL + "WHERE f.id IN (SELECT f2.id " +
+            "FROM FILMS f2 " +
+            "INNER JOIN LIKES l ON f.ID = l.FILM_ID AND l.USER_ID = ? " +
+            "INNER JOIN LIKES l2 ON f.ID = l2.FILM_ID AND l2.USER_ID = ?)";
+
+
     @Override
     public Film createFilm(Film film) {
         SimpleJdbcInsert simpleJdbcInsert = new SimpleJdbcInsert(jdbcTemplate.getDataSource())
@@ -41,8 +81,7 @@ public class FilmRepositoryImpl implements FilmStorage {
 
     @Override
     public Film updateFilm(Film film) {
-        jdbcTemplate.update("UPDATE films SET name = ?, description  = ?, releasedate  = ?, " +
-                        "duration = ? WHERE id = ?", film.getName(), film.getDescription(),
+        jdbcTemplate.update(UPDATE_FILM_SQL, film.getName(), film.getDescription(),
                 film.getReleaseDate(), film.getDuration(), film.getId());
         updMpaAndGenreAndLikeInDataBase(film);
         updDirectorInDataBase(film);
@@ -52,49 +91,33 @@ public class FilmRepositoryImpl implements FilmStorage {
     @Override
     public Film deleteFilm(Integer filmId) {
         Film film = getFilm(filmId);
-        jdbcTemplate.update("DELETE FROM films WHERE id = ?", filmId);
+        jdbcTemplate.update(DELETE_FILM_SQL, filmId);
         return film;
     }
 
     @Override
     public List<Film> getFilms() {
+        List<Film> films = null;
         try {
-            return jdbcTemplate.queryForObject("SELECT f.id, f.name, f.description, f.releasedate, f.duration, " +
-                    "l.user_id AS likes, fg.genre_id, g.name AS genre_name, fm.mpa_id, m.name AS mpa_name, " +
-                    "d.id AS director_id, d.name AS director_name " +
-                    "FROM films f " +
-                    "LEFT JOIN film_genres fg ON f.id = fg.film_id " +
-                    "LEFT JOIN genre g ON fg.genre_id = g.id " +
-                    "LEFT JOIN film_mpa fm ON f.id = fm.film_id " +
-                    "LEFT JOIN mpa m ON fm.mpa_id = m.id " +
-                    "LEFT JOIN film_directors fd ON fd.film_id = f.id " +
-                    "LEFT JOIN director d ON d.id = fd.director_id " +
-                    "LEFT JOIN likes l ON f.id = l.film_id ORDER BY f.id", mapperListAllFilms());
+            films = jdbcTemplate.queryForObject(SELECT_ALL_FILMS_SQL, mapperListAllFilms());
         } catch (EmptyResultDataAccessException e) {
-            return new ArrayList<>();
+            log.error("Error. Пустой результат от базы данных. Возврат пустого списка.");
+        } finally {
+            if (films == null) {
+                return Collections.emptyList();
+            }
+            return films;
         }
     }
 
     @Override
     public Film getFilm(Integer id) {
-        return jdbcTemplate.queryForObject("SELECT f.id, f.name, f.description, f.releasedate, f.duration, " +
-                "l.user_id AS likes, fg.genre_id, g.name AS genre_name, fm.mpa_id, m.name AS mpa_name, " +
-                "d.id AS director_id, d.name AS director_name " +
-                "FROM films f " +
-                "LEFT JOIN film_genres fg ON f.id = fg.film_id " +
-                "LEFT JOIN genre g ON fg.genre_id = g.id " +
-                "LEFT JOIN film_mpa fm ON f.id = fm.film_id " +
-                "LEFT JOIN mpa m ON fm.mpa_id = m.id " +
-                "LEFT JOIN film_directors fd ON fd.film_id = f.id " +
-                "LEFT JOIN director d ON d.id = fd.director_id " +
-                "LEFT JOIN likes l ON f.id = l.film_id " +
-                "WHERE f.id = ? " +
-                "ORDER BY f.id", this::mapperFilm, id);
+        return jdbcTemplate.queryForObject(SELECT_FILM_BY_ID_SQL, this::mapperFilm, id);
     }
 
-  @Override
+    @Override
     public List<Genre> getGenres() {
-        return jdbcTemplate.queryForObject("SELECT g.id AS genre_id, g.name AS genre_name FROM genre g ORDER BY g.id",
+        return jdbcTemplate.queryForObject(SELECT_ALL_GENRES_SQL,
                 (rs, rowNum) -> {
                     List<Genre> genresList = new ArrayList<>();
                     if (rs.getInt("genre_id") == 0) {
@@ -110,7 +133,7 @@ public class FilmRepositoryImpl implements FilmStorage {
     @Override
     public Genre getGenre(Integer id) {
         try {
-            return jdbcTemplate.queryForObject("SELECT g.id AS genre_id, g.name AS genre_name FROM genre g WHERE id = ?",
+            return jdbcTemplate.queryForObject(SELECT_GENRE_BY_ID_SQL,
                     (rs, rowNum) -> createGenreBuilder(rs), id);
         } catch (EmptyResultDataAccessException e) {
             log.error("Ошибка в запросе к базе данных. Не верный id: {} \n {}", id, e.getMessage());
@@ -120,7 +143,7 @@ public class FilmRepositoryImpl implements FilmStorage {
 
     @Override
     public List<MPA> getMpas() {
-        return jdbcTemplate.queryForObject("SELECT m.id AS mpa_id, m.name AS mpa_name FROM mpa m ORDER BY m.id",
+        return jdbcTemplate.queryForObject(SELECT_ALL_MPAS_SQL,
                 (rs, rowNum) -> {
                     List<MPA> mpaList = new ArrayList<>();
                     if (rs.getInt("mpa_id") == 0) {
@@ -136,7 +159,7 @@ public class FilmRepositoryImpl implements FilmStorage {
     @Override
     public MPA getMpa(Integer id) {
         try {
-            return jdbcTemplate.queryForObject("SELECT m.id AS mpa_id, m.name AS mpa_name FROM mpa m WHERE id = ?",
+            return jdbcTemplate.queryForObject(SELECT_MPA_BY_ID_SQL,
                     (rs, rowNum) -> createMpaBuilder(rs), id);
         } catch (EmptyResultDataAccessException e) {
             log.error("Ошибка в запросе к базе данных. Не верный id: {} \n {}", id, e.getMessage());
@@ -146,55 +169,42 @@ public class FilmRepositoryImpl implements FilmStorage {
 
     @Override
     public List<Film> getFilmsToDirector(Integer directorId) {
-        return jdbcTemplate.queryForObject("SELECT f.id, f.name, f.description, f.releasedate, f.duration, " +
-                "l.user_id AS likes, fg.genre_id, g.name AS genre_name, fm.mpa_id, m.name AS mpa_name, " +
-                "d.id AS director_id, d.name AS director_name " +
-                "FROM films f " +
-                "LEFT JOIN film_genres fg ON f.id = fg.film_id " +
-                "LEFT JOIN genre g ON fg.genre_id = g.id " +
-                "LEFT JOIN film_mpa fm ON f.id = fm.film_id " +
-                "LEFT JOIN mpa m ON fm.mpa_id = m.id " +
-                "LEFT JOIN film_directors fd ON fd.film_id = f.id " +
-                "LEFT JOIN director d ON d.id = fd.director_id " +
-                "LEFT JOIN likes l ON f.id = l.film_id " +
-                "WHERE director_id = ? ORDER BY f.id", mapperListAllFilms(), directorId);
+        return jdbcTemplate.queryForObject(SELECT_FILMS_TO_DIRECTOR_SQL, mapperListAllFilms(), directorId);
     }
 
     @Override
     public List<Film> getCommonFilms(Integer userId, Integer friendId) {
+        List<Film> films = null;
         try {
-            return jdbcTemplate.queryForObject("SELECT f.id, f.name, f.description, f.releasedate, f.duration, " +
-                    "l.user_id AS likes, fg.genre_id, g.name AS genre_name, fm.mpa_id, m.name AS mpa_name, " +
-                    "d.id AS director_id, d.name AS director_name " +
-                    "FROM films f " +
-                    "LEFT JOIN film_genres fg ON f.id = fg.film_id " +
-                    "LEFT JOIN genre g ON fg.genre_id = g.id " +
-                    "LEFT JOIN film_mpa fm ON f.id = fm.film_id " +
-                    "LEFT JOIN mpa m ON fm.mpa_id = m.id " +
-                    "LEFT JOIN film_directors fd ON fd.film_id = f.id " +
-                    "LEFT JOIN director d ON d.id = fd.director_id " +
-                    "LEFT JOIN likes l ON f.id = l.film_id " +
-                    "WHERE f.id IN (SELECT f2.id " +
-                    "FROM FILMS f2 " +
-                    "INNER JOIN LIKES l ON f.ID = l.FILM_ID AND l.USER_ID = ? " +
-                    "INNER JOIN LIKES l2 ON f.ID = l2.FILM_ID AND l2.USER_ID = ?)", mapperListAllFilms(), userId, friendId);
+            films = jdbcTemplate.queryForObject(SELECT_COMMON_FILMS_SQL, mapperListAllFilms(), userId, friendId);
         } catch (EmptyResultDataAccessException e) {
-            return new ArrayList<>();
+            log.error("Error. Пустой результат от базы данных. Возврат пустого списка.");
+        } finally {
+            if (films == null) {
+                return Collections.emptyList();
+            }
+            return films;
         }
     }
 
     @Override
     public List<Film> getFilmsBySearch(String query, String bySearch) {
+        List<Film> films = null;
         try {
             List<String> listSearch = checkBySearch(bySearch);
             if (listSearch.size() == 2) {
-                return jdbcTemplate.queryForObject(sqlSearchCreate(listSearch), mapperListAllFilms(),
+                films = jdbcTemplate.queryForObject(sqlSearchCreate(listSearch), mapperListAllFilms(),
                         getQueryParam(query), getQueryParam(query));
             } else {
-                return jdbcTemplate.queryForObject(sqlSearchCreate(listSearch), mapperListAllFilms(), getQueryParam(query));
+                films = jdbcTemplate.queryForObject(sqlSearchCreate(listSearch), mapperListAllFilms(), getQueryParam(query));
             }
         } catch (EmptyResultDataAccessException e) {
-            return new ArrayList<>();
+            log.error("Error. Пустой результат от базы данных. Возврат пустого списка.");
+        } finally {
+            if (films == null) {
+                return Collections.emptyList();
+            }
+            return films;
         }
     }
 

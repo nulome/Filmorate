@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.storage.director.DirectorStorage;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -20,10 +20,16 @@ public class DirectorServiceLogic implements DirectorService {
     @Override
     public List<Director> getDirectors() {
         log.trace("Получен запрос Get /directors");
+        List<Director> directors = null;
         try {
-            return dataDirectorStorage.getDirectors();
+            directors = dataDirectorStorage.getDirectors();
         } catch (EmptyResultDataAccessException e) {
-            return new ArrayList<>();
+            log.error("Error. Пустой результат от базы данных. Возврат пустого списка.");
+        } finally {
+            if (directors == null) {
+                return Collections.emptyList();
+            }
+            return directors;
         }
     }
 

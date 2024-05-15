@@ -20,6 +20,20 @@ public class UserRepositoryImpl implements UserStorage {
 
     private final JdbcTemplate jdbcTemplate;
 
+    private static final String SELECT_ALL_USERS_SQL = "SELECT u.id, u.login, u.name, u.email, u.birthday, f.friend_id" +
+            " FROM users u LEFT JOIN friends f ON u.id = f.user_id ORDER BY u.id";
+
+    private static final String SELECT_USER_BY_ID_SQL = "SELECT u.id, u.login, u.name, u.email, u.birthday, f.friend_id" +
+            " FROM users u LEFT JOIN friends f ON u.id = f.user_id WHERE u.id = ?";
+
+    private static final String UPDATE_USER_SQL = "UPDATE users SET login = ?, name  = ?, email  = ?, birthday  = ? " +
+            "WHERE id = ?";
+
+    private static final String DELETE_USER_SQL = "DELETE FROM users WHERE id = ?";
+
+    private static final String SELECT_USER_FEED_SQL = "SELECT id, user_id, entity_id, event_type, operation, event_date " +
+            "FROM events WHERE user_id = ?";
+
     @Override
     public User createUser(User user) {
         SimpleJdbcInsert simpleJdbcInsert = new SimpleJdbcInsert(jdbcTemplate.getDataSource())
@@ -36,8 +50,7 @@ public class UserRepositoryImpl implements UserStorage {
 
     @Override
     public User updateUser(User user) {
-        jdbcTemplate.update("UPDATE users SET login = ?, name  = ?, email  = ?, birthday  = ? " +
-                        "WHERE id = ?", user.getLogin(), user.getName(), user.getEmail(),
+        jdbcTemplate.update(UPDATE_USER_SQL, user.getLogin(), user.getName(), user.getEmail(),
                 user.getBirthday(), user.getId());
         updFriendsListInDataBase(user);
         return getUser(user.getId());
@@ -46,21 +59,19 @@ public class UserRepositoryImpl implements UserStorage {
     @Override
     public User deleteUser(Integer userId) {
         User user = getUser(userId);
-        jdbcTemplate.update("DELETE FROM users WHERE id = ?", userId);
+        jdbcTemplate.update(DELETE_USER_SQL, userId);
         return user;
     }
 
     @Override
     public List<User> getUsers() {
-        return jdbcTemplate.queryForObject("SELECT u.id, u.login, u.name, u.email, u.birthday, f.friend_id" +
-                " FROM users u LEFT JOIN friends f ON u.id = f.user_id ORDER BY u.id", mapperListAllUser());
+        return jdbcTemplate.queryForObject(SELECT_ALL_USERS_SQL, mapperListAllUser());
     }
 
 
     @Override
     public User getUser(Integer id) {
-        return jdbcTemplate.queryForObject("SELECT u.id, u.login, u.name, u.email, u.birthday, f.friend_id" +
-                " FROM users u LEFT JOIN friends f ON u.id = f.user_id WHERE u.id = ?", (rs, rowNum) -> {
+        return jdbcTemplate.queryForObject(SELECT_USER_BY_ID_SQL, (rs, rowNum) -> {
             User user = createUserBuilder(rs);
             do {
                 addListFriendsInUser(rs, user);
@@ -76,8 +87,7 @@ public class UserRepositoryImpl implements UserStorage {
 
     @Override
     public List<Event> getUserFeed(int userId) {
-        return jdbcTemplate.query("SELECT id, user_id, entity_id, event_type, operation, event_date " +
-                                  "FROM events WHERE user_id = ?", (rs, rowNum) -> Event.builder()
+        return jdbcTemplate.query(SELECT_USER_FEED_SQL, (rs, rowNum) -> Event.builder()
                 .id(rs.getInt(1))
                 .userId(rs.getInt(2))
                 .entityId(rs.getInt(3))
