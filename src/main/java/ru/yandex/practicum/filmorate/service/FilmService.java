@@ -12,13 +12,17 @@ public interface FilmService {
 
     Film updateFilm(Film film);
 
+    Film deleteFilm(Integer filmId);
+
     List<Film> getFilms();
 
     Set<Integer> addLikes(Integer filmId, Integer userId);
 
     Set<Integer> deleteLikes(Integer filmId, Integer userId);
 
-    List<Film> getPopularMovies(Integer count);
+    List<Film> getPopularMovies(Integer count, Integer genreId, Integer year);
+
+    List<Film> getFilmsSortToDirector(Integer directorId, String sortBy);
 
     Film getFilm(Integer id);
 
@@ -29,4 +33,8 @@ public interface FilmService {
     List<MPA> getMpas();
 
     MPA getMpa(Integer id);
+
+    List<Film> getCommonFilms(Integer userId, Integer friendId);
+
+    List<Film> getFilmsBySearch(String query, String bySearch);
 }

@@ -10,9 +10,11 @@ import ru.yandex.practicum.filmorate.model.MPA;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.related.Constants;
 import ru.yandex.practicum.filmorate.related.UnknownValueException;
+import ru.yandex.practicum.filmorate.storage.event.EventStorage;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -24,6 +26,7 @@ public class FilmServiceLogic implements FilmService {
 
     private final FilmStorage dataFilmStorage;
     private final UserStorage dataUserStorage;
+    private final EventStorage eventStorage;
 
     @Override
     public Film createFilm(Film film) {
@@ -39,6 +42,13 @@ public class FilmServiceLogic implements FilmService {
     }
 
     @Override
+    public Film deleteFilm(Integer filmId) {
+        log.info("Получен запрос DELETE /films/{}", filmId);
+        checkAndProvideFilmInDataBase(filmId);
+        return dataFilmStorage.deleteFilm(filmId);
+    }
+
+    @Override
     public List<Film> getFilms() {
         log.trace("Получен запрос Get /films");
         return dataFilmStorage.getFilms();
@@ -51,6 +61,7 @@ public class FilmServiceLogic implements FilmService {
         Film film = checkAndProvideFilmInDataBase(filmId);
         film.getLikes().add(userId);
         dataFilmStorage.updateFilm(film);
+        eventStorage.addLikesEvent(filmId, userId, System.currentTimeMillis());
         return film.getLikes();
     }
 
@@ -61,19 +72,48 @@ public class FilmServiceLogic implements FilmService {
         Film film = checkAndProvideFilmInDataBase(filmId);
         film.getLikes().remove(userId);
         dataFilmStorage.updateFilm(film);
+        eventStorage.deleteLikesEvent(filmId, userId, System.currentTimeMillis());
         return film.getLikes();
     }
 
     @Override
-    public List<Film> getPopularMovies(Integer count) {
-        log.trace("Получен запрос GET /films/popular?count={} - топ по лайкам", count);
+    public List<Film> getPopularMovies(Integer count, Integer genreId, Integer year) {
+        log.trace("Получен запрос GET /films/popular?count={}&genreId={}&year={} - топ по лайкам", count, genreId, year);
         if (count == null) {
             count = Constants.DEFAULT_POPULAR_VALUE;
         }
+
         List<Film> films = dataFilmStorage.getFilms();
         return films.stream()
-                .sorted(this::compare)
+                .filter(film -> {
+
+                    if (genreId == null)
+                        return true;
+
+                    for (Genre genre : film.getGenres()) {
+                        if (genre.getId() == genreId)
+                            return true;
+                    }
+
+                    return false;
+                })
+                .filter(film -> {
+                    if (year == null)
+                        return true;
+                    else
+                        return film.getReleaseDate().getYear() == year;
+                })
+                .sorted(this::comparePopularMovies)
                 .limit(count)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Film> getFilmsSortToDirector(Integer directorId, String sortBy) {
+        log.trace("Получен запрос GET /films/director/{}?sortBy={} ", directorId, sortBy);
+        List<Film> films = dataFilmStorage.getFilmsToDirector(directorId);
+        return films.stream()
+                .sorted(compareSortToDirector(sortBy))
                 .collect(Collectors.toList());
     }
 
@@ -103,8 +143,40 @@ public class FilmServiceLogic implements FilmService {
         return dataFilmStorage.getMpa(id);
     }
 
-    private int compare(Film film1, Film film2) {
+    @Override
+    public List<Film> getCommonFilms(Integer userId, Integer friendId) {
+        log.trace("Получен запрос GET /films/common/{}&{}", userId, friendId);
+        checkAndReceiptUserInDataBase(userId);
+        checkAndReceiptUserInDataBase(friendId);
+        List<Film> films = dataFilmStorage.getCommonFilms(userId, friendId);
+        return films.stream()
+                .sorted(this::comparePopularMovies)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Film> getFilmsBySearch(String query, String bySearch) {
+        log.debug("Получен запрос GET /films/search?query={}&by={}", query, bySearch);
+        List<Film> films =  dataFilmStorage.getFilmsBySearch(query, bySearch);
+        return films.stream()
+                .sorted(this::comparePopularMovies)
+                .collect(Collectors.toList());
+    }
+
+    private int comparePopularMovies(Film film1, Film film2) {
         return film2.getLikes().size() - film1.getLikes().size();
+    }
+
+    private Comparator<Film> compareSortToDirector(String sort) {
+        switch (sort) {
+            case "year":
+                return Comparator.comparingInt(f -> f.getReleaseDate().getYear());
+            case "likes":
+                return Comparator.comparingInt(f -> f.getLikes().size());
+        }
+
+        log.error("Ошибка в способе сортировки: {}", sort);
+        throw new UnknownValueException("Передано не верное значение sortBy: " + sort);
     }
 
     private Film checkAndProvideFilmInDataBase(Integer id) {

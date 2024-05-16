@@ -9,6 +9,7 @@ import org.springframework.test.context.jdbc.Sql;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.MPA;
 import ru.yandex.practicum.filmorate.service.FilmServiceLogic;
+import ru.yandex.practicum.filmorate.storage.event.EventRepositoryImpl;
 import ru.yandex.practicum.filmorate.storage.film.FilmRepositoryImpl;
 import ru.yandex.practicum.filmorate.storage.user.UserRepositoryImpl;
 
@@ -37,7 +38,7 @@ class FilmControllerTest {
     @BeforeEach
     void create() {
         filmController = new FilmController(new FilmServiceLogic(new FilmRepositoryImpl(jdbcTemplate),
-               new UserRepositoryImpl(jdbcTemplate)));
+               new UserRepositoryImpl(jdbcTemplate), new EventRepositoryImpl(jdbcTemplate)));
         MPA mpa = MPA.builder()
                 .id(1)
                 .name("G")
@@ -49,6 +50,7 @@ class FilmControllerTest {
                 .duration(80)
                 .likes(new HashSet<>())
                 .genres(new TreeSet<>())
+                .directors(new TreeSet<>())
                 .mpa(mpa)
                 .build();
 
@@ -61,19 +63,19 @@ class FilmControllerTest {
     @Sql({"/data.sql"})
     void checkTestMapping() {
         Film checkFilm = filmController.createFilm(film);
-        assertEquals(7, checkFilm.getId(), "Не записывается id");
+        assertEquals(1, checkFilm.getId(), "Не записывается id");
 
         Film checkFilm2 = filmController.createFilm(film);
-        assertEquals(8, checkFilm2.getId(), "Не обновляется id");
+        assertEquals(2, checkFilm2.getId(), "Не обновляется id");
 
-        film.setId(7);
+        film.setId(1);
         film.setName("UpdName");
         film.setDescription("Update");
         filmController.updateFilm(film);
-        assertEquals(film, filmController.getFilms().get(6), "Не корректно обновляет film");
+        assertEquals(film, filmController.getFilms().get(0), "Не корректно обновляет film");
 
         List<Film> list = filmController.getFilms();
-        assertEquals(8, list.size(), "Не сохраняет фильмы");
+        assertEquals(2, list.size(), "Не сохраняет фильмы");
     }
 
     @Test

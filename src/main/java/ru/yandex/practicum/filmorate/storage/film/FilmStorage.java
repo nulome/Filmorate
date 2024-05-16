@@ -11,6 +11,8 @@ public interface FilmStorage {
 
     Film updateFilm(Film film);
 
+    Film deleteFilm(Integer filmId);
+
     List<Film> getFilms();
 
     Film getFilm(Integer id);
@@ -22,4 +24,10 @@ public interface FilmStorage {
     List<MPA> getMpas();
 
     MPA getMpa(Integer id);
+
+    List<Film> getFilmsToDirector(Integer directorId);
+
+    List<Film> getCommonFilms(Integer userId, Integer friendId);
+
+    List<Film> getFilmsBySearch(String query, String bySearch);
 }
