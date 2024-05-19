@@ -23,13 +23,10 @@ public class DirectorServiceLogic implements DirectorService {
         List<Director> directors = null;
         try {
             directors = dataDirectorStorage.getDirectors();
-        } catch (EmptyResultDataAccessException e) {
-            log.error("Error. Пустой результат от базы данных. Возврат пустого списка.");
-        } finally {
-            if (directors == null) {
-                return Collections.emptyList();
-            }
             return directors;
+        } catch (EmptyResultDataAccessException e) {
+            log.error("Пустой результат от базы данных. Возврат пустого списка.");
+            return Collections.emptyList();
         }
     }
 

@@ -97,16 +97,11 @@ public class FilmRepositoryImpl implements FilmStorage {
 
     @Override
     public List<Film> getFilms() {
-        List<Film> films = null;
         try {
-            films = jdbcTemplate.queryForObject(SELECT_ALL_FILMS_SQL, mapperListAllFilms());
+            return jdbcTemplate.queryForObject(SELECT_ALL_FILMS_SQL, mapperListAllFilms());
         } catch (EmptyResultDataAccessException e) {
-            log.error("Error. Пустой результат от базы данных. Возврат пустого списка.");
-        } finally {
-            if (films == null) {
-                return Collections.emptyList();
-            }
-            return films;
+            log.error("Пустой результат от базы данных. Возврат пустого списка.");
+            return Collections.emptyList();
         }
     }
 
@@ -174,37 +169,27 @@ public class FilmRepositoryImpl implements FilmStorage {
 
     @Override
     public List<Film> getCommonFilms(Integer userId, Integer friendId) {
-        List<Film> films = null;
         try {
-            films = jdbcTemplate.queryForObject(SELECT_COMMON_FILMS_SQL, mapperListAllFilms(), userId, friendId);
+            return jdbcTemplate.queryForObject(SELECT_COMMON_FILMS_SQL, mapperListAllFilms(), userId, friendId);
         } catch (EmptyResultDataAccessException e) {
-            log.error("Error. Пустой результат от базы данных. Возврат пустого списка.");
-        } finally {
-            if (films == null) {
-                return Collections.emptyList();
-            }
-            return films;
+            log.error("Пустой результат от базы данных. Возврат пустого списка.");
+            return Collections.emptyList();
         }
     }
 
     @Override
     public List<Film> getFilmsBySearch(String query, String bySearch) {
-        List<Film> films = null;
         try {
             List<String> listSearch = checkBySearch(bySearch);
             if (listSearch.size() == 2) {
-                films = jdbcTemplate.queryForObject(sqlSearchCreate(listSearch), mapperListAllFilms(),
+                return jdbcTemplate.queryForObject(sqlSearchCreate(listSearch), mapperListAllFilms(),
                         getQueryParam(query), getQueryParam(query));
             } else {
-                films = jdbcTemplate.queryForObject(sqlSearchCreate(listSearch), mapperListAllFilms(), getQueryParam(query));
+                return jdbcTemplate.queryForObject(sqlSearchCreate(listSearch), mapperListAllFilms(), getQueryParam(query));
             }
         } catch (EmptyResultDataAccessException e) {
-            log.error("Error. Пустой результат от базы данных. Возврат пустого списка.");
-        } finally {
-            if (films == null) {
-                return Collections.emptyList();
-            }
-            return films;
+            log.error("Пустой результат от базы данных. Возврат пустого списка.");
+            return Collections.emptyList();
         }
     }
 
